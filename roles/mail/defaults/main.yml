@@ -1,0 +1,4 @@
+---
+mail_nginx_ingress_path: !!null
+mail_nginx_ingress_setup_domains: !!null
+mail_srs_secret: !!null

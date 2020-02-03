@@ -1,0 +1,13 @@
+---
+# Shared config
+- hosts:
+  - mail
+  roles:
+    - docker
+    - ssh-keys
+  become: true
+
+- hosts:
+  - mail
+  roles:
+    - mail

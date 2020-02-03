@@ -1,0 +1,55 @@
+---
+- name: Create project folder
+  file:
+    path: "{{ mail_nginx_ingress_path }}"
+    state: directory
+
+- name: Copy files
+  synchronize:
+    src: .
+    dest: "{{ mail_nginx_ingress_path }}"
+    delete: yes
+    recursive: true
+    rsync_opts:
+      - "--exclude=certbot"
+      - "--exclude=data"
+      - "--exclude=env-mailserver"
+      - "--exclude=config/postfix-virtual.cf"
+      - "--exclude=config/postfix-accounts.cf"
+      - "--exclude=config/opendkim/keys/espinoza.dev/mail.private"
+      - "--exclude=config/opendkim/keys/espinoza.dev/mail.txt"
+  register: copy_data
+
+- debug:
+    var: copy_data
+
+- name: Render Templates
+  template: src={{item.src}} dest={{item.dest}}
+  with_items:
+    - { src: 'templates/env-mailserver.j2', dest: '{{ mail_nginx_ingress_path }}/env-mailserver' }
+    - { src: 'templates/postfix-virtual.cf.j2', dest: '{{ mail_nginx_ingress_path }}/config/postfix-virtual.cf' }
+    - { src: 'templates/postfix-accounts.cf.j2', dest: '{{ mail_nginx_ingress_path }}/config/postfix-accounts.cf' }
+    - { src: 'templates/opendkim/espinoza.dev/mail.private.j2', dest: '{{ mail_nginx_ingress_path }}/config/opendkim/keys/espinoza.dev/mail.private' }
+    - { src: 'templates/opendkim/espinoza.dev/mail.txt.j2', dest: '{{ mail_nginx_ingress_path }}/config/opendkim/keys/espinoza.dev/mail.txt' }
+  register: template_env
+
+- name: Check initial certificate exists
+  stat:
+    path: "{{ mail_nginx_ingress_path }}/certbot/conf/live/{{ mail_nginx_ingress_setup_main_certificate }}/privkey.pem"
+  register: stat_result
+
+- name: Setup certificate if needed
+  include_tasks: certs.yml
+  when: stat_result.stat.exists == False
+
+- name: Start Nginx
+  shell: docker-compose up -d nginx
+  args:
+    chdir: "{{ mail_nginx_ingress_path }}"
+  when: copy_data.changed or stat_result.stat.exists == False
+
+- name: Start mail service
+  shell: docker-compose up -d
+  args:
+    chdir: "{{ mail_nginx_ingress_path }}"
+  when: template_env.changed or copy_data.changed or stat_result.stat.exists == False

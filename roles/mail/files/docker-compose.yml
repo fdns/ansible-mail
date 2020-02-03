@@ -1,0 +1,41 @@
+version: '3'
+services:
+  nginx:
+    image: nginx:1.15.9-alpine
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    restart: unless-stopped
+    network_mode: host
+    ports:
+      - "80:80"
+    volumes:
+    - ./conf.d:/etc/nginx/conf.d:ro
+    - ./certbot/www:/var/www/certbot:ro
+  certbot:
+    image: certbot/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    restart: unless-stopped
+    volumes:
+    - ./certbot/conf:/etc/letsencrypt
+    - ./certbot/www:/var/www/certbot
+  mail:
+    image: tvial/docker-mailserver@sha256:03daa3e458fd73b3d7abcbc2045ac23706affc3cddf40e1644afa5638fcec2b7
+    hostname: ${HOSTNAME}
+    domainname: ${DOMAINNAME}
+    container_name: ${CONTAINER_NAME}
+    ports:
+    - "25:25"
+    - "587:587"
+    - "995:995"
+    volumes:
+    - ./data/maildata:/var/mail
+    - ./data/mailstate:/var/mail-state
+    - ./data/maillogs:/var/log/mail
+    - ./config/:/tmp/docker-mailserver/
+    - ./certbot/conf:/etc/letsencrypt:ro
+    env_file:
+    - .env
+    - env-mailserver
+    cap_add:
+    - NET_ADMIN
+    - SYS_PTRACE
+    restart: always

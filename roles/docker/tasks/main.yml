@@ -1,0 +1,57 @@
+---
+- name: Check if docker is installed
+  shell: command -v docker
+  register: docker_check
+  ignore_errors: yes
+  failed_when: False
+  changed_when: False
+
+- set_fact:
+    docker_installed: "{{ docker_check.rc == 0 }}"
+
+- name: Update yum packages
+  shell: yum update -y
+  when: not docker_installed
+
+- name: Install docker
+  shell: amazon-linux-extras install docker
+  when: not docker_installed
+
+- name: Start the docker daemon
+  shell: sudo systemctl enable docker
+  when: not docker_installed
+
+- name: Start the docker daemon
+  shell: sudo systemctl start docker
+  when: not docker_installed
+
+- name: Install docker-compose
+  shell: curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && chmod +x /usr/local/bin/docker-compose && ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+  when: not docker_installed
+
+- name: Add user to docker group
+  user:
+    name: ec2-user
+    groups: 'docker'
+    append: 'yes'
+  when: not docker_installed
+
+- name: Reset ssh to load new docker groups
+  meta: reset_connection
+  when: not docker_installed
+
+- name: Create config folder
+  file:
+    path: /etc/docker/
+    state: directory
+
+- name: Copy config to target
+  copy:
+    src: daemon.json
+    dest: /etc/docker/daemon.json
+  with_fileglob: "*"
+  register: copy_data
+
+- name: Restart docker daemon
+  shell: systemctl restart docker
+  when: copy_data.changed

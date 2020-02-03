@@ -1,0 +1,14 @@
+{
+  "default-address-pools": [
+    {
+      "base": "10.254.0.0/16",
+      "size": 24
+    }
+  ],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "20m",
+    "max-file": "2",
+    "tag": "{{.Name}}"
+  }
+}

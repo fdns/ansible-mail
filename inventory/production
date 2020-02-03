@@ -1,0 +1,5 @@
+[mail]
+ec2-52-14-54-107.us-east-2.compute.amazonaws.com
+
+[all:vars]
+ansible_user=ec2-user

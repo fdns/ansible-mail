@@ -1,0 +1,28 @@
+- name: Create certificate folder
+  file: 
+    path: "{{ mail_nginx_ingress_path }}/certbot/conf/live/{{ mail_nginx_ingress_setup_main_certificate }}"
+    state: directory
+
+- name: Generate dummy certificates while waiting for validation
+  shell: "docker run -v {{ mail_nginx_ingress_path }}/certbot/conf:/etc/letsencrypt --rm frapsoft/openssl req -x509 -nodes -newkey rsa:1024 -days 1 -keyout '/etc/letsencrypt/live/{{ mail_nginx_ingress_setup_main_certificate }}/privkey.pem' -out '/etc/letsencrypt/live/{{ mail_nginx_ingress_setup_main_certificate }}/fullchain.pem' -subj '/CN=localhost'"
+
+- name: Restart nginx
+  shell: docker-compose stop nginx && docker-compose up -d nginx
+  args:
+    chdir: "{{ mail_nginx_ingress_path  }}"
+
+- name: Wait for nginx
+  wait_for: port=80
+
+- name: Delete dummy certificates
+  file: path={{item}} state=absent
+  with_items:
+  - "{{ mail_nginx_ingress_path }}/certbot/conf/live/{{ mail_nginx_ingress_setup_main_certificate }}/"
+
+- name: requesting letsencrypt certificate
+  shell: "docker run --rm -v {{ mail_nginx_ingress_path }}/certbot/conf:/etc/letsencrypt -v {{ mail_nginx_ingress_path }}/certbot/www:/var/www/certbot certbot/certbot certonly --webroot --webroot-path /var/www/certbot --email eol-ayuda@uchile.cl --cert-name {{ mail_nginx_ingress_setup_main_certificate }} -d {{ mail_nginx_ingress_setup_domains | join(' -d ') }} --rsa-key-size 4096 --non-interactive --agree-tos --force-renewal"
+    
+- name: Stop nginx
+  shell: docker-compose stop nginx
+  args:
+    chdir: "{{ mail_nginx_ingress_path  }}"
