@@ -20,9 +20,6 @@
       - "--exclude=config/opendkim/keys/espinoza.dev/mail.txt"
   register: copy_data
 
-- debug:
-    var: copy_data
-
 - name: Render Templates
   template: src={{item.src}} dest={{item.dest}}
   with_items:

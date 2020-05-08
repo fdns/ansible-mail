@@ -55,3 +55,8 @@
 - name: Restart docker daemon
   shell: systemctl restart docker
   when: copy_data.changed
+
+- name: Reset ssh to load new docker groups
+  meta: reset_connection
+  when: copy_data.changed
+
