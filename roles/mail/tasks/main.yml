@@ -4,6 +4,11 @@
     path: "{{ mail_nginx_ingress_path }}"
     state: directory
 
+- name: Remove postfix if installed
+  yum:
+    name: postfix
+    state: absent
+
 - name: Copy files
   synchronize:
     src: .

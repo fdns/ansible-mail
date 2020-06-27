@@ -323,7 +323,12 @@ SRS_SECRET={{ mail_srs_secret }}
 #
 # empty => don't configure default relay host
 # default host and optional port to relay all mail through
-DEFAULT_RELAY_HOST=
+DEFAULT_RELAY_HOST=email-smtp.us-west-2.amazonaws.com
+
+# AWS Configuration
+AWS_SES_HOST=email-smtp.us-east-2.amazonaws.com
+AWS_SES_USERPASS={{ mail_ses_user }}:{{ mail_ses_pass }}
+AWS_SES_PORT=587
 
 # -----------------------------------------------------------------------------------------------------------------------------
 # ---------------- Multi-domain relay section ---------------------------------------------------------------------------------
@@ -338,12 +343,12 @@ RELAY_HOST=
 
 # empty => 25
 # default port to relay mail
-RELAY_PORT=25
+RELAY_PORT=587
 
 # empty => no default
 # default relay username (if no specific entry exists in postfix-sasl-password.cf)
-RELAY_USER=
+RELAY_USER={{ mail_ses_user }}
 
 # empty => no default
 # password for default relay user
-RELAY_PASSWORD=
+RELAY_PASSWORD={{ mail_ses_pass }}
